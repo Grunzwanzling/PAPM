@@ -19,7 +19,7 @@ func reader(r io.Reader) {
 }
 
 func main() {
-	c, err := net.Dial("unix", "/tmp/go.sock")
+	c, err := net.Dial("unix", "/tmp/echo.sock")
 	if err != nil {
 		log.Fatal("Dial error", err)
 	}
