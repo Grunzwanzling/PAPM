@@ -91,7 +91,12 @@ func server(c net.Conn) {
 		switch command := input[0]; command {
 
 		case "unlock":
+			if unlocked {
 
+				send(c, "Already unlocked")
+				break
+
+			}
 			send(c, "Unlocking\n")
 
 			db, unlockErr = unlockDB(input[1], input[2])
@@ -99,7 +104,7 @@ func server(c net.Conn) {
 
 				send(c, "Unlock error: "+unlockErr.Error())
 			} else {
-
+				unlocked = true
 			}
 		}
 		if unlockErr == nil {
