@@ -1,22 +1,24 @@
-package main;
+package main
 
 import (
-		"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/process"
+	"github.com/tobischo/gokeepasslib"
 	//	"reflect"
 	//	"runtime"
 	"net"
-	//	"strings"
 	//	"bufio"
 	"fmt"
-	"log"
-	//	"os"
+	"os"
+	"strings"
 	"syscall"
 	//	"time"
 )
 
-var pipeFile = "pipe.log"
+var db *gokeepasslib.Database
+var unlocked bool
 
 func main() {
+
 	l, err := net.ListenUnix("unix", &net.UnixAddr{"/tmp/echo.sock", "unix"})
 	if err != nil {
 		println("listen error", err.Error())
@@ -31,7 +33,7 @@ func main() {
 		}
 
 		ucred, error := getCredentials(fd)
-		if(error != nil){
+		if error != nil {
 
 			println("error2", error.Error())
 		}
@@ -39,23 +41,22 @@ func main() {
 		fmt.Printf("peer_pid: %d\n", ucred.Pid)
 		fmt.Printf("peer_uid: %d\n", ucred.Uid)
 		fmt.Printf("peer_gid: %d\n", ucred.Gid)
-proc, err2 := process.NewProcess(ucred.Pid)
-if(err2 != nil){
+		proc, err2 := process.NewProcess(ucred.Pid)
+		if err2 != nil {
 
-println("error3", err2.Error())
-}
+			println("error3", err2.Error())
+		}
 
-exe, err3 := proc.Exe()
+		exe, err3 := proc.Exe()
 
-if(err3 != nil){
-	println("error4", err3.Error())
+		if err3 != nil {
+			println("error4", err3.Error())
 
+		}
 
-}
+		println(exe)
 
-println(exe);
-
-//if(ucred.Uid==0){
+		//if(ucred.Uid==0){
 		go server(fd)
 		//}
 
@@ -71,6 +72,7 @@ func getCredentials(conn *net.UnixConn) (*syscall.Ucred, error) {
 
 	return syscall.GetsockoptUcred(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_PEERCRED)
 }
+
 func server(c net.Conn) {
 
 	for {
@@ -82,12 +84,55 @@ func server(c net.Conn) {
 
 		data := buf[0:nr]
 		println("Server got:", string(data))
-		_, err = c.Write(data)
-		if err != nil {
-			log.Fatal("Writing client error: ", err)
+		input := strings.Split(string(data), ";")
+
+		var unlockErr error
+
+		switch command := input[0]; command {
+
+		case "unlock":
+
+			send(c, "Unlocking\n")
+
+			db, unlockErr = unlockDB(input[1], input[2])
+			if unlockErr != nil {
+			} else {
+
+				send(c, "Unlock error: "+unlockErr.Error())
+			}
 		}
+		if unlockErr == nil {
+			entry := db.Content.Root.Groups[0].Entries[0]
+			fmt.Println(entry.GetPassword())
+		}
+
+	}
+
+	//_, err := c.Write(data)
+}
+
+func send(c net.Conn, text string) {
+
+	println(text)
+
+	_, err := c.Write([]byte(text))
+	if err != nil {
+		println("Write error; ", err.Error())
 	}
 
 }
+func unlockDB(path string, pass string) (*gokeepasslib.Database, error) {
 
+	file, _ := os.Open(path)
 
+	db := gokeepasslib.NewDatabase()
+	db.Credentials = gokeepasslib.NewPasswordCredentials(pass)
+	err := gokeepasslib.NewDecoder(file).Decode(db)
+	if err != nil {
+
+		return nil, err
+	}
+
+	db.UnlockProtectedEntries()
+	return db, nil
+}

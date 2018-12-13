@@ -27,7 +27,7 @@ func main() {
 
 	go reader(c)
 	for {
-		msg := "hi"
+		msg := "unlock;/home/max/pass/test.kdbx;test"
 		_, err := c.Write([]byte(msg))
 		if err != nil {
 			log.Fatal("Write error:", err)
