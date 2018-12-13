@@ -96,9 +96,10 @@ func server(c net.Conn) {
 
 			db, unlockErr = unlockDB(input[1], input[2])
 			if unlockErr != nil {
-			} else {
 
 				send(c, "Unlock error: "+unlockErr.Error())
+			} else {
+
 			}
 		}
 		if unlockErr == nil {
