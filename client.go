@@ -34,7 +34,7 @@ func main() {
 		println("Client sent:", msg)
 		time.Sleep(1e9)
 
-		msg = "get;check"
+		msg = "get;group1/group2/check"
 		_, err = c.Write([]byte(msg))
 		if err != nil {
 			log.Fatal("Write error:", err)

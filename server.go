@@ -7,6 +7,7 @@ import (
 	//	"runtime"
 	"net"
 	//	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -120,23 +121,29 @@ func server(c net.Conn) {
 			root := db.Content.Root
 			levels := strings.Split(input[1], "/")
 			currentElement := root.Groups[0]
-			var lvl int = 0
+			elem, err := recursiveSearch(currentElement, levels, 0)
+			if err == nil {
+				send(c, elem.GetPassword())
+			} else {
+				send(c, err.Error())
+
+			}
 		}
 	}
 }
 
-func recursiveSearch(element gokeepasslib.Group, levels []String, lvl int) gokeepasslib.Entry {
+func recursiveSearch(element gokeepasslib.Group, levels []string, lvl int) (gokeepasslib.Entry, error) {
 
-	if lvl+1 == levels.size {
-		for number, elem := range element.Entries {
+	if lvl+1 == len(levels) {
+		for _, elem := range element.Entries {
 			println("Searching for entry: " + levels[lvl])
 			if elem.GetTitle() == levels[lvl] {
-				return (elem)
+				return elem, nil
 			}
 		}
 	}
 
-	for number, elem := range element.Groups {
+	for _, elem := range element.Groups {
 		println("Searching for: " + levels[lvl])
 		println(elem.Name)
 		if elem.Name == levels[lvl] {
@@ -145,7 +152,7 @@ func recursiveSearch(element gokeepasslib.Group, levels []String, lvl int) gokee
 
 		}
 	}
-	return nil
+	return gokeepasslib.NewEntry(), errors.New("Not found")
 
 }
 
