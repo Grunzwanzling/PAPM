@@ -58,7 +58,7 @@ func main() {
 		println(exe)
 
 		//if(ucred.Uid==0){
-		go server(fd)
+		go server(fd, exe)
 		//}
 
 	}
@@ -74,7 +74,7 @@ func getCredentials(conn *net.UnixConn) (*syscall.Ucred, error) {
 	return syscall.GetsockoptUcred(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_PEERCRED)
 }
 
-func server(c net.Conn) {
+func server(c net.Conn, exe string) {
 	for {
 		buf := make([]byte, 512)
 		nr, err := c.Read(buf)
@@ -88,6 +88,7 @@ func server(c net.Conn) {
 
 		var unlockErr error
 
+	commands:
 		switch command := input[0]; command {
 
 		case "unlock":
@@ -110,7 +111,7 @@ func server(c net.Conn) {
 				fmt.Println(entry.GetPassword())
 			}
 		case "get":
-			send(c, "Getting")
+			//			send(c, "Getting")
 			if !unlocked {
 
 				send(c, "Not unlocked!")
@@ -123,6 +124,20 @@ func server(c net.Conn) {
 			currentElement := root.Groups[0]
 			elem, err := recursiveSearch(currentElement, levels, 0)
 			if err == nil {
+
+				for _, pair := range elem.Values {
+
+					if pair.Key == "whitelist" {
+
+						if !contains(strings.Split(pair.Value.Content, ";"), exe) {
+
+							send(c, "Process is not in whitelist")
+							break commands
+						}
+					}
+
+				}
+
 				send(c, elem.GetPassword())
 			} else {
 				send(c, err.Error())
@@ -130,6 +145,15 @@ func server(c net.Conn) {
 			}
 		}
 	}
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 func recursiveSearch(element gokeepasslib.Group, levels []string, lvl int) (gokeepasslib.Entry, error) {
