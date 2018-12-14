@@ -24,14 +24,20 @@ func main() {
 		log.Fatal("Dial error", err)
 	}
 	defer c.Close()
-
-	go reader(c)
 	for {
+		go reader(c)
 		msg := "unlock;/home/max/pass/test.kdbx;test"
-		_, err := c.Write([]byte(msg))
+		_, err = c.Write([]byte(msg))
 		if err != nil {
 			log.Fatal("Write error:", err)
-			break
+		}
+		println("Client sent:", msg)
+		time.Sleep(1e9)
+
+		msg = "get;check"
+		_, err = c.Write([]byte(msg))
+		if err != nil {
+			log.Fatal("Write error:", err)
 		}
 		println("Client sent:", msg)
 		time.Sleep(1e9)

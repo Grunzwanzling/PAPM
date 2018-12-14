@@ -74,7 +74,6 @@ func getCredentials(conn *net.UnixConn) (*syscall.Ucred, error) {
 }
 
 func server(c net.Conn) {
-
 	for {
 		buf := make([]byte, 512)
 		nr, err := c.Read(buf)
@@ -105,16 +104,49 @@ func server(c net.Conn) {
 				send(c, "Unlock error: "+unlockErr.Error())
 			} else {
 				unlocked = true
+
+				entry := db.Content.Root.Groups[0].Entries[0]
+				fmt.Println(entry.GetPassword())
+			}
+		case "get":
+			send(c, "Getting")
+			if !unlocked {
+
+				send(c, "Not unlocked!")
+				break
+
+			}
+
+			root := db.Content.Root
+			levels := strings.Split(input[1], "/")
+			currentElement := root.Groups[0]
+			var lvl int = 0
+		}
+	}
+}
+
+func recursiveSearch(element gokeepasslib.Group, levels []String, lvl int) gokeepasslib.Entry {
+
+	if lvl+1 == levels.size {
+		for number, elem := range element.Entries {
+			println("Searching for entry: " + levels[lvl])
+			if elem.GetTitle() == levels[lvl] {
+				return (elem)
 			}
 		}
-		if unlockErr == nil {
-			entry := db.Content.Root.Groups[0].Entries[0]
-			fmt.Println(entry.GetPassword())
-		}
-
 	}
 
-	//_, err := c.Write(data)
+	for number, elem := range element.Groups {
+		println("Searching for: " + levels[lvl])
+		println(elem.Name)
+		if elem.Name == levels[lvl] {
+			println("Found!")
+			return recursiveSearch(elem, levels, lvl+1)
+
+		}
+	}
+	return nil
+
 }
 
 func send(c net.Conn, text string) {
