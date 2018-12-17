@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"net"
-	"time"
+	"os"
 )
 
 func reader(r io.Reader) {
@@ -26,20 +28,36 @@ func main() {
 	defer c.Close()
 	for {
 		go reader(c)
-		msg := "unlock;/home/max/pass/test.kdbx;test"
-		_, err = c.Write([]byte(msg))
-		if err != nil {
-			log.Fatal("Write error:", err)
-		}
-		println("Client sent:", msg)
-		time.Sleep(1e9)
+		//		msg := "unlock;/home/max/pass/test.kdbx;test"
+		//		_, err = c.Write([]byte(msg))
+		//		if err != nil {
+		//			log.Fatal("Write error:", err)
+		//		}
+		//		println("Client sent:", msg)
+		//		time.Sleep(1e9)
+		//
+		//		msg = "get;group1/group2/check"
+		//		_, err = c.Write([]byte(msg))
+		//		if err != nil {
+		//			log.Fatal("Write error:", err)
+		//		}
+		//		println("Client sent:", msg)
+		//		time.Sleep(1e9)
 
-		msg = "get;group1/group2/check"
-		_, err = c.Write([]byte(msg))
-		if err != nil {
-			log.Fatal("Write error:", err)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			var text = scanner.Text()
+			fmt.Println(text)
+			_, err = c.Write([]byte(text))
+			if err != nil {
+				log.Fatal("Write error:", err)
+			}
+
 		}
-		println("Client sent:", msg)
-		time.Sleep(1e9)
+
+		if scanner.Err() != nil {
+			log.Fatal("Scanner error:", scanner.Err())
+		}
+
 	}
 }
