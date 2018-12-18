@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 var socket string
@@ -36,6 +37,7 @@ func readFlags() {
 }
 func main() {
 	readFlags()
+	println(os.Getpid())
 	c, err := net.Dial("unix", socket)
 	if err != nil {
 		println("Dial error: ", err.Error())
@@ -51,7 +53,7 @@ func main() {
 		if err != nil {
 			println("Write error: ", err)
 		}
-
+		time.Sleep(1e9)
 		//			msg = "get;group1/group2/check"
 	} else {
 		println("Started in CLI mode with unix-socket: " + socket)

@@ -1,19 +1,15 @@
 package main
 
 import (
-	"github.com/shirou/gopsutil/process"
-	"github.com/tobischo/gokeepasslib"
-	//	"reflect"
-	//	"runtime"
-	"net"
-	//	"bufio"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/shirou/gopsutil/process"
+	"github.com/tobischo/gokeepasslib"
+	"net"
 	"os"
 	"strings"
 	"syscall"
-	//	"time"
 )
 
 var db *gokeepasslib.Database
@@ -33,40 +29,38 @@ func main() {
 	readFlags()
 	l, err := net.ListenUnix("unix", &net.UnixAddr{socket, "unix"})
 	if err != nil {
-		println("listen error", err.Error())
+		println("Listen error: ", err.Error())
 		return
 	}
 
 	for {
 		fd, err := l.AcceptUnix()
 		if err != nil {
-			println("accept error", err.Error())
+			println("Accept error: ", err.Error())
 			return
 		}
 
 		ucred, error := getCredentials(fd)
 		if error != nil {
 
-			println("error2", error.Error())
+			println("File error: ", error.Error())
 		}
 
 		fmt.Printf("peer_pid: %d\n", ucred.Pid)
-		fmt.Printf("peer_uid: %d\n", ucred.Uid)
-		fmt.Printf("peer_gid: %d\n", ucred.Gid)
 		proc, err2 := process.NewProcess(ucred.Pid)
 		if err2 != nil {
 
-			println("error3", err2.Error())
+			println("Process error: ", err2.Error())
 		}
 
 		exe, err3 := proc.Exe()
 
 		if err3 != nil {
-			println("error4", err3.Error())
+			println("Error getting path of process: ", err3.Error())
 
 		}
 
-		println(exe)
+		println("Execution path: ", exe)
 
 		//if(ucred.Uid==0){
 		go server(fd, exe)
@@ -94,7 +88,7 @@ func server(c net.Conn, exe string) {
 		}
 
 		data := buf[0:nr]
-		println("Server got:", string(data))
+		println("Server got: ", string(data))
 		input := strings.Split(string(data), ";")
 
 		var unlockErr error
@@ -121,6 +115,17 @@ func server(c net.Conn, exe string) {
 				entry := db.Content.Root.Groups[0].Entries[0]
 				fmt.Println(entry.GetPassword())
 			}
+
+		case "lock":
+			if !unlocked {
+
+				send(c, "Not unlocked")
+				break
+
+			}
+			send(c, "Locking\n")
+			db.LockProtectedEntries()
+			unlocked = false
 		case "get":
 			//			send(c, "Getting")
 			if !unlocked {
