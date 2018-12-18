@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"flag"
 	"io"
-	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func reader(r io.Reader) {
@@ -16,47 +16,45 @@ func reader(r io.Reader) {
 		if err != nil {
 			return
 		}
-		println("Client got:", string(buf[0:n]))
+		println(string(buf[0:n]))
 	}
 }
 
 func main() {
-	c, err := net.Dial("unix", "/tmp/echo.sock")
+	wd, _ := os.Getwd()
+	socket := flag.String("socket", "~/socket", "a filepath")
+	cmd := flag.String("command", "", "a supported command")
+	flag.Parse()
+	*socket = strings.Replace(*socket, "~", wd, -1)
+	c, err := net.Dial("unix", *socket)
 	if err != nil {
-		log.Fatal("Dial error", err)
+		println("Dial error ", err)
 	}
 	defer c.Close()
-	for {
-		go reader(c)
-		//		msg := "unlock;/home/max/pass/test.kdbx;test"
-		//		_, err = c.Write([]byte(msg))
-		//		if err != nil {
-		//			log.Fatal("Write error:", err)
-		//		}
-		//		println("Client sent:", msg)
-		//		time.Sleep(1e9)
-		//
-		//		msg = "get;group1/group2/check"
-		//		_, err = c.Write([]byte(msg))
-		//		if err != nil {
-		//			log.Fatal("Write error:", err)
-		//		}
-		//		println("Client sent:", msg)
-		//		time.Sleep(1e9)
+	go reader(c)
 
+	if *cmd != "" {
+
+		//	msg := "unlock;/home/max/pass/test.kdbx;test"
+		_, err = c.Write([]byte(*cmd))
+		if err != nil {
+			println("Write error: ", err)
+		}
+
+		//			msg = "get;group1/group2/check"
+	} else {
+		println("Started in CLI mode with unix-socket: " + *socket)
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			var text = scanner.Text()
-			fmt.Println(text)
 			_, err = c.Write([]byte(text))
 			if err != nil {
-				log.Fatal("Write error:", err)
+				println("Write error: ", err)
 			}
 
 		}
-
 		if scanner.Err() != nil {
-			log.Fatal("Scanner error:", scanner.Err())
+			println("Scanner error: ", scanner.Err())
 		}
 
 	}
