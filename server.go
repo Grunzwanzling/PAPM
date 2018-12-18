@@ -8,6 +8,7 @@ import (
 	"net"
 	//	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -17,10 +18,20 @@ import (
 
 var db *gokeepasslib.Database
 var unlocked bool
+var socket string
 
+func readFlags() {
+
+	flag.StringVar(&socket, "socket", "~/socket", "a filepath")
+	flag.Parse()
+
+	wd, _ := os.Getwd()
+	socket = strings.Replace(socket, "~", wd, -1)
+
+}
 func main() {
-
-	l, err := net.ListenUnix("unix", &net.UnixAddr{"/tmp/echo.sock", "unix"})
+	readFlags()
+	l, err := net.ListenUnix("unix", &net.UnixAddr{socket, "unix"})
 	if err != nil {
 		println("listen error", err.Error())
 		return
