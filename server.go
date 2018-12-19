@@ -52,7 +52,13 @@ func main() {
 
 			println("Process error: ", err2.Error())
 		}
+		proc, err4 := proc.Parent()
 
+		if err4 != nil {
+
+			println("Error getting parent: ", err4.Error())
+
+		}
 		exe, err3 := proc.Exe()
 
 		if err3 != nil {
