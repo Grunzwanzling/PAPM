@@ -47,7 +47,7 @@ func readFlags() {
 }
 func main() {
 	readFlags()
-	println(os.Getpid())
+	//	println(os.Getpid())
 	c, err := net.Dial("unix", socket)
 	if err != nil {
 		println("Dial error: ", err.Error())

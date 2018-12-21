@@ -8,6 +8,7 @@ import (
 	"github.com/tobischo/gokeepasslib"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
 	"syscall"
 )
@@ -25,8 +26,24 @@ func readFlags() {
 	socket = strings.Replace(socket, "~", wd, -1)
 
 }
+func handleSigterm() {
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for _ = range c {
+			var _ = os.Remove(socket)
+			println("Terminating")
+			os.Exit(1)
+		}
+
+	}()
+
+}
 func main() {
+	handleSigterm()
 	readFlags()
+	var err = os.Remove(socket)
 	l, err := net.ListenUnix("unix", &net.UnixAddr{socket, "unix"})
 	if err != nil {
 		println("Listen error: ", err.Error())
@@ -40,10 +57,10 @@ func main() {
 			return
 		}
 
-		ucred, error := getCredentials(fd)
-		if error != nil {
+		ucred, err := getCredentials(fd)
+		if err != nil {
 
-			println("File error: ", error.Error())
+			println("File error: ", err.Error())
 		}
 
 		fmt.Printf("peer_pid: %d\n", ucred.Pid)
@@ -52,6 +69,34 @@ func main() {
 
 			println("Process error: ", err2.Error())
 		}
+		//if(ucred.Uid==0){
+		println("Execution path:")
+		path := getParents(func(proc *process.Process) (string, error) { return proc.Exe() }, proc)
+		println("Cmdline:")
+		cmd := getParents(func(proc *process.Process) (string, error) { return proc.Cmdline() }, proc)
+		go server(fd, path, cmd)
+		//}
+
+	}
+}
+
+type getParam func(*process.Process) (string, error)
+
+func getParents(f getParam, proc *process.Process) []string {
+
+	var parents []string
+
+	exe, err3 := f(proc)
+
+	if err3 != nil {
+		println("Error getting path of process: ", err3.Error())
+
+	} else {
+		println("Found: ", exe)
+	}
+	parents = append(parents, exe)
+	for i := 0; i < 10; i++ {
+
 		proc, err4 := proc.Parent()
 
 		if err4 != nil {
@@ -59,20 +104,17 @@ func main() {
 			println("Error getting parent: ", err4.Error())
 
 		}
-		exe, err3 := proc.Exe()
+		exe, err3 := f(proc)
 
 		if err3 != nil {
 			println("Error getting path of process: ", err3.Error())
 
 		}
-
-		println("Execution path: ", exe)
-
-		//if(ucred.Uid==0){
-		go server(fd, exe)
-		//}
+		parents = append(parents, exe)
+		println("Found: ", exe)
 
 	}
+	return parents
 }
 
 func getCredentials(conn *net.UnixConn) (*syscall.Ucred, error) {
@@ -85,7 +127,7 @@ func getCredentials(conn *net.UnixConn) (*syscall.Ucred, error) {
 	return syscall.GetsockoptUcred(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_PEERCRED)
 }
 
-func server(c net.Conn, exe string) {
+func server(c net.Conn, exe []string, cmd []string) {
 	for {
 		buf := make([]byte, 512)
 		nr, err := c.Read(buf)
@@ -149,15 +191,35 @@ func server(c net.Conn, exe string) {
 
 				for _, pair := range elem.Values {
 
-					if pair.Key == "whitelist" {
-
-						if !contains(strings.Split(pair.Value.Content, ";"), exe) {
+					if pair.Key == "whitelist_path" {
+						found := false
+						for _, parent := range exe {
+							if contains(strings.Split(pair.Value.Content, ";"), parent) {
+								found = true
+								println("Found in whitelist")
+							}
+						}
+						if !found {
 
 							send(c, "Process is not in whitelist")
 							break commands
 						}
 					}
 
+					if pair.Key == "whitelist_cmd" {
+						found := false
+						for _, parent := range cmd {
+							if contains(strings.Split(pair.Value.Content, ";"), parent) {
+								found = true
+								println("Found in whitelist")
+							}
+						}
+						if !found {
+
+							send(c, "Process is not in whitelist")
+							break commands
+						}
+					}
 				}
 
 				send(c, elem.GetPassword())
