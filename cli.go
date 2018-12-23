@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -32,7 +33,8 @@ func readOnce(r io.Reader) {
 		println("Read error: ", err.Error())
 		os.Exit(1)
 	}
-	println(string(buf[0:n]))
+	fmt.Print(string(buf[0:n]))
+	os.Exit(0)
 }
 
 func readFlags() {
@@ -63,7 +65,7 @@ func main() {
 			println("Write error: ", err)
 		}
 		time.Sleep(1e9)
-		os.Exit(1)
+		os.Exit(0)
 		//			msg = "get;group1/group2/check"
 	} else {
 

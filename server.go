@@ -189,37 +189,31 @@ func server(c net.Conn, exe []string, cmd []string) {
 			elem, err := recursiveSearch(currentElement, levels, 0)
 			if err == nil {
 
+				found := false
 				for _, pair := range elem.Values {
 
 					if pair.Key == "whitelist_path" {
-						found := false
 						for _, parent := range exe {
 							if contains(strings.Split(pair.Value.Content, ";"), parent) {
 								found = true
 								println("Found in whitelist")
 							}
 						}
-						if !found {
-
-							send(c, "Process is not in whitelist")
-							break commands
-						}
 					}
 
 					if pair.Key == "whitelist_cmd" {
-						found := false
 						for _, parent := range cmd {
 							if contains(strings.Split(pair.Value.Content, ";"), parent) {
 								found = true
 								println("Found in whitelist")
 							}
 						}
-						if !found {
-
-							send(c, "Process is not in whitelist")
-							break commands
-						}
 					}
+				}
+				if !found {
+
+					send(c, "Process is not in whitelist")
+					break commands
 				}
 
 				send(c, elem.GetPassword())
