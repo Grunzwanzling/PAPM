@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/shirou/gopsutil/process"
 	"github.com/tobischo/gokeepasslib"
@@ -15,31 +14,15 @@ import (
 
 var db *gokeepasslib.Database
 var unlocked bool
-var socket string
+var cfg Config
 
-type Config struct {
-	Socket         string
-	SocketList     []string
-	UseAutoCorrect bool
-	Wordlist       string
-}
-
-func readFlags() {
-
-	flag.StringVar(&socket, "socket", "~/socket", "a filepath")
-	flag.Parse()
-
-	wd, _ := os.Getwd()
-	socket = strings.Replace(socket, "~", wd, -1)
-
-}
 func handleSigterm() {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for _ = range c {
-			var _ = os.Remove(socket)
+			var _ = os.Remove(cfg.Socket)
 			println("Terminating")
 			os.Exit(1)
 		}
@@ -49,9 +32,9 @@ func handleSigterm() {
 }
 func main() {
 	handleSigterm()
-	readFlags()
-	var err = os.Remove(socket)
-	l, err := net.ListenUnix("unix", &net.UnixAddr{socket, "unix"})
+	cfg = readFlags()
+	var err = os.Remove(cfg.Socket)
+	l, err := net.ListenUnix("unix", &net.UnixAddr{cfg.Socket, "unix"})
 	if err != nil {
 		println("Listen error: ", err.Error())
 		return
