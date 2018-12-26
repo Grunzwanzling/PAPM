@@ -14,10 +14,9 @@ import (
 )
 
 var socket string
-var database_list string
+var db string
 var form *tview.Form
 var pwField *tview.InputField
-var dropdownField *tview.DropDown
 var app *tview.Application
 
 func readLines(path string) ([]string, error) {
@@ -37,12 +36,12 @@ func readLines(path string) ([]string, error) {
 func readFlags() {
 
 	flag.StringVar(&socket, "socket", "./socket", "a filepath")
-	flag.StringVar(&database_list, "db_list", "./db_list", "a filepath")
+	flag.StringVar(&db, "db", "./db.kdbx", "a .kdbx file")
 	flag.Parse()
 
 	wd, _ := os.Getwd()
-	socket = strings.Replace(socket, ".", wd, -1)
-	database_list = strings.Replace(database_list, ".", wd, -1)
+	socket = strings.Replace(socket, "./", wd+"/", -1)
+	db = strings.Replace(db, "./", wd+"/", -1)
 
 }
 func readOnce(r io.Reader) {
@@ -66,7 +65,6 @@ func sendCommand() {
 	defer c.Close()
 
 	go readOnce(c)
-	_, db := dropdownField.GetCurrentOption()
 	pw := pwField.GetText()
 	msg := "unlock;" + db + ";" + pw
 	_, err = c.Write([]byte(msg))
@@ -78,22 +76,12 @@ func sendCommand() {
 }
 func main() {
 	readFlags()
-	dbs, err := readLines(database_list)
-	if err != nil {
-		println("Read error: ", err.Error())
-		os.Exit(0)
-	}
 	pwField = tview.NewInputField().
 		SetLabel("Password").
 		SetMaskCharacter('*')
 
-	dropdownField = tview.NewDropDown().
-		SetLabel("Database").
-		SetOptions(dbs, nil).
-		SetCurrentOption(0)
 	app = tview.NewApplication()
 	form = tview.NewForm().SetLabelColor(tcell.ColorWhite).
-		AddFormItem(dropdownField).
 		AddFormItem(pwField).
 		AddButton("Unlock", sendCommand).
 		AddButton("Quit", func() {

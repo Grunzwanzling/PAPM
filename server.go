@@ -17,6 +17,13 @@ var db *gokeepasslib.Database
 var unlocked bool
 var socket string
 
+type Config struct {
+	Socket         string
+	SocketList     []string
+	UseAutoCorrect bool
+	Wordlist       string
+}
+
 func readFlags() {
 
 	flag.StringVar(&socket, "socket", "~/socket", "a filepath")
@@ -151,7 +158,7 @@ func server(c net.Conn, exe []string, cmd []string) {
 				break
 
 			}
-			send(c, "Unlocking\n")
+			//send(c, "Unlocking\n")
 
 			db, unlockErr = unlockDB(input[1], input[2])
 			if unlockErr != nil {
@@ -159,9 +166,9 @@ func server(c net.Conn, exe []string, cmd []string) {
 				send(c, "Unlock error: "+unlockErr.Error())
 			} else {
 				unlocked = true
-
-				entry := db.Content.Root.Groups[0].Entries[0]
-				fmt.Println(entry.GetPassword())
+				send(c, "Unlocked!")
+				//	entry := db.Content.Root.Groups[0].Entries[0]
+				//	fmt.Println(entry.GetPassword())
 			}
 
 		case "lock":
