@@ -7,11 +7,10 @@ import (
 	"io"
 	"net"
 	"os"
-	"strings"
 	"time"
 )
 
-var socket string
+var cfg Config
 var cmd string
 
 func reader(r io.Reader) {
@@ -37,20 +36,16 @@ func readOnce(r io.Reader) {
 	os.Exit(0)
 }
 
-func readFlags() {
-
-	flag.StringVar(&socket, "socket", "~/socket", "a filepath")
+func readFlags2() {
+	cfg = readFlags()
 	flag.StringVar(&cmd, "command", "", "a supported command")
 	flag.Parse()
-
-	wd, _ := os.Getwd()
-	socket = strings.Replace(socket, "~", wd, -1)
 
 }
 func main() {
 	readFlags()
 	//	println(os.Getpid())
-	c, err := net.Dial("unix", socket)
+	c, err := net.Dial("unix", cfg.Socket)
 	if err != nil {
 		println("Dial error: ", err.Error())
 		os.Exit(1)
@@ -70,7 +65,7 @@ func main() {
 	} else {
 
 		go reader(c)
-		println("Started in CLI mode with unix-socket: " + socket)
+		println("Started in CLI mode with unix-socket: " + cfg.Socket)
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			var text = scanner.Text()

@@ -2,19 +2,16 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	"io"
 	"net"
 	"os"
-	"strings"
 	"time"
 )
 
-var socket string
-var db string
+var cfg Config
 var form *tview.Form
 var pwField *tview.InputField
 var app *tview.Application
@@ -33,17 +30,6 @@ func readLines(path string) ([]string, error) {
 	}
 	return lines, scanner.Err()
 }
-func readFlags() {
-
-	flag.StringVar(&socket, "socket", "./socket", "a filepath")
-	flag.StringVar(&db, "db", "./db.kdbx", "a .kdbx file")
-	flag.Parse()
-
-	wd, _ := os.Getwd()
-	socket = strings.Replace(socket, "./", wd+"/", -1)
-	db = strings.Replace(db, "./", wd+"/", -1)
-
-}
 func readOnce(r io.Reader) {
 	buf := make([]byte, 1024)
 	n, err := r.Read(buf[:])
@@ -57,7 +43,7 @@ func readOnce(r io.Reader) {
 }
 func sendCommand() {
 
-	c, err := net.Dial("unix", socket)
+	c, err := net.Dial("unix", cfg.Socket)
 	if err != nil {
 		println("Dial error: ", err.Error())
 		os.Exit(1)
@@ -66,7 +52,7 @@ func sendCommand() {
 
 	go readOnce(c)
 	pw := pwField.GetText()
-	msg := "unlock;" + db + ";" + pw
+	msg := "unlock;" + cfg.Db + ";" + pw
 	_, err = c.Write([]byte(msg))
 	if err != nil {
 		println("Write error: ", err)
@@ -75,7 +61,7 @@ func sendCommand() {
 	app.Stop()
 }
 func main() {
-	readFlags()
+	cfg = readFlags()
 	pwField = tview.NewInputField().
 		SetLabel("Password").
 		SetMaskCharacter('*')

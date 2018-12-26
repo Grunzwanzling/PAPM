@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Socket         string
-	DbList         []string
+	Db             string
 	UseAutoCorrect bool
 	Wordlist       string
 }
@@ -23,7 +23,8 @@ func readFlags() Config {
 
 		println("Config parsing error: ", err.Error())
 	}
-	flag.StringVar(&cfg.Socket, "socket", "~/socket", "a filepath")
+	flag.StringVar(&cfg.Socket, "socket", "./socket", "a filepath")
+	flag.StringVar(&cfg.Db, "db", "./db.kdbx", "a kdbx file")
 	flag.BoolVar(&cfg.UseAutoCorrect, "use_auto_correct", false, "Wether to auto-correct the password using the wordlist")
 	flag.StringVar(&cfg.Wordlist, "wordlist", "./wordlist", "The wordlist to use for auto-correct")
 
