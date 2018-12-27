@@ -16,9 +16,15 @@ type Config struct {
 
 func readFlags() Config {
 
+	wd, _ := os.Getwd()
 	var cfg Config
-	cfg_file := flag.String("config", "./config", "a filepath")
-	err := gcfg.ReadFileInto(&cfg, *cfg_file)
+	var cfg_file string
+	flag.StringVar(&cfg_file, "config", "./config", "a filepath")
+	if cfg_file == "" {
+		cfg_file = "./config"
+	}
+	cfg_file = strings.Replace(cfg_file, "./", wd, -1)
+	err := gcfg.ReadFileInto(&cfg, cfg_file)
 	if err != nil {
 
 		println("Config parsing error: ", err.Error())
@@ -30,7 +36,6 @@ func readFlags() Config {
 
 	flag.Parse()
 
-	wd, _ := os.Getwd()
 	cfg.Socket = strings.Replace(cfg.Socket, "./", wd, -1)
 	return cfg
 }
