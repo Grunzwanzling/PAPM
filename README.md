@@ -1,2 +1,2 @@
 # PAPM
-Password manager that allows authentificated processes to fetch passwords
+Password manager/agent that allows authenticated processes to fetch passwords on the fly.
