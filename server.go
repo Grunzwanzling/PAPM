@@ -164,6 +164,17 @@ func server(c net.Conn, exe []string, cmd []string) {
 			send(c, "Locking\n")
 			db.LockProtectedEntries()
 			unlocked = false
+		case "check":
+			if unlocked {
+
+				send(c, "Unlocked")
+				break
+
+			} else {
+
+				send(c, "Locked")
+				break
+			}
 		case "get":
 			//			send(c, "Getting")
 			if !unlocked {
