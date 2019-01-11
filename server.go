@@ -39,7 +39,12 @@ func main() {
 		println("Listen error: ", err.Error())
 		return
 	}
-
+	println("Chmod attempt")
+	if err := os.Chmod(cfg.Socket, 0777); err != nil {
+		println("Chmod error:" + err.Error())
+	} else {
+		println("Chmod succes")
+	}
 	for {
 		fd, err := l.AcceptUnix()
 		if err != nil {
@@ -167,12 +172,12 @@ func server(c net.Conn, exe []string, cmd []string) {
 		case "check":
 			if unlocked {
 
-				send(c, "Unlocked")
+				send(c, "Unlocked\n")
 				break
 
 			} else {
 
-				send(c, "Locked")
+				send(c, "Locked\n")
 				break
 			}
 		case "get":

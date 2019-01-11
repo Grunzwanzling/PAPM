@@ -23,7 +23,7 @@ func readFlags() Config {
 	if cfg_file == "" {
 		cfg_file = "./config"
 	}
-	cfg_file = strings.Replace(cfg_file, "./", wd, -1)
+	cfg_file = strings.Replace(cfg_file, "./", wd+"/", -1)
 	err := gcfg.ReadFileInto(&cfg, cfg_file)
 	if err != nil {
 
