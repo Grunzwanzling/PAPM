@@ -185,7 +185,6 @@ func server(c net.Conn, exe []string, cmd []string) {
 			if !unlocked {
 
 				send(c, "Not unlocked!")
-				os.Exit(1)
 			}
 
 			root := db.Content.Root
