@@ -131,6 +131,7 @@ func server(c net.Conn, exe []string, cmd []string) {
 		}
 
 		data := buf[0:nr]
+		//Remove eventually as it might leak passwords
 		println("Server got: ", string(data))
 		input := strings.Split(string(data), ";")
 
